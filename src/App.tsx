@@ -1,9 +1,9 @@
+import Blog from './pages/Blog/Blog'
+
 function App() {
     return (
-        <div className='App'>
-            <a className='App-link' href='https://reactjs.org' target='_blank' rel='noopener noreferrer'>
-                Learn React
-            </a>
+        <div className='p-5'>
+            <Blog />
         </div>
     )
 }
