@@ -1,8 +1,9 @@
+import { useEffect } from 'react'
+
 import PostItem from './PostItem'
 import { useSelector } from 'react-redux'
 import { RootState, useAppDispatch } from 'store'
 import { deletePost, getPostList, startEditingPost } from './blog.slice'
-import { useEffect } from 'react'
 
 export default function PostList() {
     const postList = useSelector((state: RootState) => state.blog.postList)

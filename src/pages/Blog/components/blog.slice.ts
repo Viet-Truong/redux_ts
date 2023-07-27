@@ -1,4 +1,4 @@
-import { nanoid, createSlice, PayloadAction, createAsyncThunk } from '@reduxjs/toolkit'
+import { createSlice, PayloadAction, createAsyncThunk } from '@reduxjs/toolkit'
 import { Post } from '../../../Types/blog.type'
 import { initialPostList } from '../../../constants/blog'
 import request from 'utils/request'
@@ -20,17 +20,41 @@ export const getPostList = createAsyncThunk('blog/getPostList', async (_, thunkA
     return response.data
 })
 
+export const addPost = createAsyncThunk('blog/addPost', async (body: Omit<Post, 'id'>, thunkAPI) => {
+    const response = await request.post<Post>('posts', body, {
+        signal: thunkAPI.signal
+    })
+    return response.data
+})
+
+export const updatePost = createAsyncThunk(
+    'blog/updatePost',
+    async ({ postID, body }: { postID: string; body: Post }, thunkAPI) => {
+        const response = await request.put<Post>(`posts/${postID}`, body, {
+            signal: thunkAPI.signal
+        })
+        return response.data
+    }
+)
+
+export const deletePost = createAsyncThunk('blog/deletePost', async (postID: string, thunkAPI) => {
+    const response = await request.delete<Post>(`posts/${postID}`, {
+        signal: thunkAPI.signal
+    })
+    return response.data
+})
+
 const blogSlice = createSlice({
     name: 'blog',
     initialState,
     reducers: {
-        deletePost: (state, action: PayloadAction<string>) => {
-            const postID = action.payload
-            const foundPostIndex = state.postList.findIndex((post) => post.id === postID)
-            if (foundPostIndex !== -1) {
-                state.postList.splice(foundPostIndex, 1)
-            }
-        },
+        // deletePost: (state, action: PayloadAction<string>) => {
+        //     const postID = action.payload
+        //     const foundPostIndex = state.postList.findIndex((post) => post.id === postID)
+        //     if (foundPostIndex !== -1) {
+        //         state.postList.splice(foundPostIndex, 1)
+        //     }
+        // },
         startEditingPost: (state, action: PayloadAction<string>) => {
             const postID = action.payload
             const foundPost = state.postList.find((post) => post.id === postID) || null
@@ -38,39 +62,46 @@ const blogSlice = createSlice({
         },
         cancelEditingPost: (state) => {
             state.editingPost = null
-        },
-        doneEditingPost: (state, action: PayloadAction<Post>) => {
-            const postID = action.payload.id
-            state.postList.some((post, index) => {
-                if (post.id === postID) {
-                    state.postList[index] = action.payload
-                    return true
-                }
-                return false
-            })
-            state.editingPost = null
-        },
-        addPost: {
-            reducer: (state, action: PayloadAction<Post>) => {
-                const post = action.payload
-                state.postList.push(post)
-            },
-            prepare: (post: Omit<Post, 'id'>) => ({
-                payload: {
-                    ...post,
-                    id: nanoid()
-                }
-            })
         }
+        // doneEditingPost: (state, action: PayloadAction<Post>) => {
+        //     const postID = action.payload.id
+        //     state.postList.some((post, index) => {
+        //         if (post.id === postID) {
+        //             state.postList[index] = action.payload
+        //             return true
+        //         }
+        //         return false
+        //     })
+        //     state.editingPost = null
+        // }
     },
     extraReducers(builder) {
-        builder.addCase(getPostList.fulfilled, (state, action) => {
-            state.postList = action.payload
-        })
+        builder
+            .addCase(getPostList.fulfilled, (state, action) => {
+                state.postList = action.payload
+            })
+            .addCase(addPost.fulfilled, (state, action) => {
+                state.postList.push(action.payload)
+            })
+            .addCase(updatePost.fulfilled, (state, action) => {
+                state.postList.some((post, index) => {
+                    if (post.id === action.payload.id) {
+                        state.postList[index] = action.payload
+                        return true
+                    }
+                    return false
+                })
+                state.editingPost = null
+            })
+            .addCase(deletePost.fulfilled, (state, action) => {
+                const postId = action.meta.arg
+                const deletePostId = state.postList.findIndex((post) => post.id === postId)
+                state.postList.splice(deletePostId, 1)
+            })
     }
 })
 
-export const { deletePost, addPost, startEditingPost, cancelEditingPost, doneEditingPost } = blogSlice.actions
+export const { startEditingPost, cancelEditingPost } = blogSlice.actions
 const blogReducer = blogSlice.reducer
 
 export default blogReducer

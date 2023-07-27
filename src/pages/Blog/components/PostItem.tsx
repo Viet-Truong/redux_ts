@@ -1,4 +1,5 @@
 import { Post } from './../../../Types/blog.type'
+
 interface PostItemType {
     post: Post
     handleDelete: (postId: string) => void

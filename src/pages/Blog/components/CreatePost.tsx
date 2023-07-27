@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
+
 import { Post } from './../../../Types/blog.type'
-import { useDispatch, useSelector } from 'react-redux'
-import { addPost, cancelEditingPost, doneEditingPost } from './blog.slice'
-import { RootState } from 'store'
+import { useSelector } from 'react-redux'
+import { addPost, cancelEditingPost, updatePost } from './blog.slice'
+import { RootState, useAppDispatch } from 'store'
 
 const initialState: Post = {
     id: '',
@@ -16,7 +17,7 @@ const initialState: Post = {
 export default function CreatePost() {
     const [formData, setFormData] = useState<Post>(initialState)
     const editingPost = useSelector((state: RootState) => state.blog.editingPost)
-    const dispatch = useDispatch()
+    const dispatch = useAppDispatch()
 
     useEffect(() => {
         setFormData(editingPost || initialState)
@@ -29,10 +30,14 @@ export default function CreatePost() {
     const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault()
         if (editingPost) {
-            dispatch(doneEditingPost(formData))
+            dispatch(
+                updatePost({
+                    postID: editingPost.id,
+                    body: formData
+                })
+            )
         } else {
-            const formDataWithID = { ...formData }
-            dispatch(addPost(formDataWithID))
+            dispatch(addPost(formData))
         }
         setFormData(initialState)
     }
