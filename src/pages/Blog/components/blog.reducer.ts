@@ -1,4 +1,4 @@
-import { createAction, createReducer } from '@reduxjs/toolkit'
+import { createAction, createReducer, nanoid } from '@reduxjs/toolkit'
 import { Post } from '../../../Types/blog.type'
 import { initialPostList } from './../../../constants/blog'
 
@@ -12,7 +12,14 @@ const initialState: BlogState = {
     editingPost: null
 }
 
-export const addPost = createAction<Post>('blog/addPost')
+export const addPost = createAction('blog/addPost', function (post: Omit<Post, 'id'>) {
+    return {
+        payload: {
+            ...post,
+            id: nanoid()
+        }
+    }
+})
 
 export const deletePost = createAction<string>('blog/deletePost')
 
