@@ -1,17 +1,29 @@
 import PostItem from './PostItem'
-import { useDispatch, useSelector } from 'react-redux'
-import { RootState } from 'store'
-import { deletePost, startEditingPost } from './blog.slice'
+import { useSelector } from 'react-redux'
+import { RootState, useAppDispatch } from 'store'
+import { deletePost, getPostList, startEditingPost } from './blog.slice'
+import { useEffect } from 'react'
 
 export default function PostList() {
     const postList = useSelector((state: RootState) => state.blog.postList)
-    const dispatch = useDispatch()
+    const dispatch = useAppDispatch()
+
+    useEffect(() => {
+        const promise = dispatch(getPostList())
+
+        return () => {
+            promise.abort()
+        }
+    }, [dispatch])
+
     const handleDelete = (postId: string) => {
         dispatch(deletePost(postId))
     }
+
     const handleStartEditing = (postId: string) => {
         dispatch(startEditingPost(postId))
     }
+
     return (
         <div className='p-5'>
             <div className='bg-white py-6 sm:py-8 lg:py-12'>

@@ -1,6 +1,7 @@
-import { createAction, createReducer, nanoid, createSlice, PayloadAction } from '@reduxjs/toolkit'
+import { nanoid, createSlice, PayloadAction, createAsyncThunk } from '@reduxjs/toolkit'
 import { Post } from '../../../Types/blog.type'
 import { initialPostList } from '../../../constants/blog'
+import request from 'utils/request'
 
 interface BlogState {
     postList: Post[]
@@ -11,6 +12,13 @@ const initialState: BlogState = {
     postList: initialPostList,
     editingPost: null
 }
+
+export const getPostList = createAsyncThunk('blog/getPostList', async (_, thunkAPI) => {
+    const response = await request.get<Post[]>('posts', {
+        signal: thunkAPI.signal
+    })
+    return response.data
+})
 
 const blogSlice = createSlice({
     name: 'blog',
@@ -54,6 +62,11 @@ const blogSlice = createSlice({
                 }
             })
         }
+    },
+    extraReducers(builder) {
+        builder.addCase(getPostList.fulfilled, (state, action) => {
+            state.postList = action.payload
+        })
     }
 })
 
