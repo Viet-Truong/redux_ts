@@ -1,4 +1,4 @@
-import { createReducer } from '@reduxjs/toolkit'
+import { createAction, createReducer } from '@reduxjs/toolkit'
 import { Post } from '../../../Types/blog.type'
 import { initialPostList } from './../../../constants/blog'
 
@@ -10,6 +10,13 @@ const initialState: BlogState = {
     postList: initialPostList
 }
 
-const blogReducer = createReducer(initialState, (builder) => {})
+export const addPost = createAction<Post>('blog/addPost')
+
+const blogReducer = createReducer(initialState, (builder) => {
+    builder.addCase(addPost, (state, action) => {
+        const post = action.payload
+        state.postList.push(post)
+    })
+})
 
 export default blogReducer
