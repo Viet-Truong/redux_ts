@@ -4,7 +4,7 @@ class Request {
     instance: AxiosInstance
     constructor() {
         this.instance = axios.create({
-            baseURL: 'http://localhost:4000/',
+            baseURL: 'http://localhost:7500/',
             timeout: 10000
         })
     }

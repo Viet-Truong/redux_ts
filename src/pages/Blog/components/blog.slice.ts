@@ -1,16 +1,26 @@
-import { createSlice, PayloadAction, createAsyncThunk } from '@reduxjs/toolkit'
+import { createSlice, PayloadAction, createAsyncThunk, AsyncThunk } from '@reduxjs/toolkit'
 import { Post } from '../../../Types/blog.type'
 import { initialPostList } from '../../../constants/blog'
 import request from 'utils/request'
 
+type GenericAsyncThunk = AsyncThunk<unknown, unknown, any>
+
+type PendingAction = ReturnType<GenericAsyncThunk['pending']>
+type RejectedAction = ReturnType<GenericAsyncThunk['rejected']>
+type FulfilledAction = ReturnType<GenericAsyncThunk['fulfilled']>
+
 interface BlogState {
     postList: Post[]
     editingPost: Post | null
+    loading: boolean
+    currentRequestID: undefined | string
 }
 
 const initialState: BlogState = {
     postList: initialPostList,
-    editingPost: null
+    editingPost: null,
+    loading: false,
+    currentRequestID: undefined
 }
 
 export const getPostList = createAsyncThunk('blog/getPostList', async (_, thunkAPI) => {
@@ -98,6 +108,23 @@ const blogSlice = createSlice({
                 const deletePostId = state.postList.findIndex((post) => post.id === postId)
                 state.postList.splice(deletePostId, 1)
             })
+            .addMatcher<PendingAction>(
+                (action) => action.type.endsWith('/pending'),
+                (state, action) => {
+                    state.loading = true
+                    // when call any API createAsyncThunk auto generate requestID unique
+                    state.currentRequestID = action.meta.requestId
+                }
+            )
+            .addMatcher<FulfilledAction | RejectedAction>(
+                (action) => action.type.endsWith('/fulfilled') || action.type.endsWith('/rejected'),
+                (state, action) => {
+                    if (state.loading && state.currentRequestID === action.meta.requestId) {
+                        state.loading = false
+                        state.currentRequestID = undefined
+                    }
+                }
+            )
     }
 })
 
