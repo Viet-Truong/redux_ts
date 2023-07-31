@@ -4,6 +4,11 @@ import { Post } from './../../../Types/blog.type'
 import { useSelector } from 'react-redux'
 import { addPost, cancelEditingPost, updatePost } from './blog.slice'
 import { RootState, useAppDispatch } from 'store'
+import { unwrapResult } from '@reduxjs/toolkit'
+
+interface Error {
+    publishDate: string
+}
 
 const initialState: Post = {
     id: '',
@@ -16,8 +21,8 @@ const initialState: Post = {
 
 export default function CreatePost() {
     const [formData, setFormData] = useState<Post>(initialState)
+    const [error, setError] = useState<null | Error>(null)
     const editingPost = useSelector((state: RootState) => state.blog.editingPost)
-    const loading = useSelector((state: RootState) => state.blog.loading)
     const dispatch = useAppDispatch()
 
     useEffect(() => {
@@ -28,19 +33,40 @@ export default function CreatePost() {
         dispatch(cancelEditingPost())
     }
 
-    const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault()
+        // use promises
         if (editingPost) {
+            // Đóng gói
             dispatch(
                 updatePost({
                     postID: editingPost.id,
                     body: formData
                 })
             )
+                // Mở gói => Lấy được data từ AsyncThunk
+                .unwrap()
+                .then(() => {
+                    setFormData(initialState)
+                    if (error) {
+                        setError(null)
+                    }
+                })
+                .catch((error) => {
+                    setError(error.error)
+                })
         } else {
-            dispatch(addPost(formData))
+            // use async await
+            try {
+                await dispatch(addPost(formData)).unwrap()
+                setFormData(initialState)
+                if (error) {
+                    setError(null)
+                }
+            } catch (error: any) {
+                setError(error.error)
+            }
         }
-        setFormData(initialState)
     }
     return (
         <div className='p-5'>
@@ -94,18 +120,29 @@ export default function CreatePost() {
                 <div className='mb-6'>
                     <label
                         htmlFor='publishDate'
-                        className='mb-2 block text-sm font-medium text-gray-900 dark:text-gray-300'
+                        className={`mb-2 block text-sm font-medium text-gray-900 dark:text-gray-300 ${
+                            error?.publishDate ? 'text-red-700' : 'text-gray-900'
+                        }`}
                     >
                         Publish Date
                     </label>
                     <input
                         type='datetime-local'
                         id='publishDate'
-                        className='block w-56 rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-blue-500'
+                        className={`block w-56 rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-blue-500 ${
+                            error?.publishDate
+                                ? 'border-red-500 text-red-700 bg-red-50 placeholder-red-700 focus:border-red-500 focus:ring-red-500'
+                                : 'border-gray-500 text-gray-700 bg-gray-50 placeholder-gray-700 focus:border-gray-500 focus:ring-gray-500'
+                        }`}
                         placeholder='Title'
                         value={formData.publishDate}
                         onChange={(e) => setFormData((prev) => ({ ...prev, publishDate: e.target.value }))}
                     />
+                    {error?.publishDate && (
+                        <p className='mt-2 text-sm text-red-600'>
+                            <span className='font-medium'>{error.publishDate}</span>
+                        </p>
+                    )}
                 </div>
                 <div className='mb-6 flex items-center'>
                     <input
